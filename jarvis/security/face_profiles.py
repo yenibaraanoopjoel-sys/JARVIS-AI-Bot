@@ -1,14 +1,14 @@
-"""Metadata registry for enrolled face profiles.
+"""Metadata registry for consented face profiles.
 
-Raw biometric images are not database defaults. Enrollment images are stored locally
-under the ignored data/user_profiles directory and must only be created with consent.
-This registry is a minimal SQLite-compatible metadata table; face matching is not
-implemented by this registry and must not be treated as authentication.
+Raw biometric samples are stored locally under the ignored data/user_profiles directory.
+This registry records consent and activation state; matching is performed by the vision
+recognition service and must not be treated as owner authentication.
 """
-from sqlalchemy import String, Boolean, DateTime, select
+from sqlalchemy import Boolean, DateTime, String, select
 from sqlalchemy.orm import Mapped, mapped_column
-from ..storage import Base
+
 from ..models import utc_now
+from ..storage import Base
 
 
 class FaceProfileRow(Base):
@@ -33,7 +33,24 @@ class FaceProfileStore:
         with self.store.sessions.begin() as session:
             if session.get(FaceProfileRow, profile_id):
                 raise ValueError("This profile ID already exists")
-            session.add(FaceProfileRow(profile_id=profile_id, display_name=display_name, consent_recorded=True, active=True))
+            session.add(FaceProfileRow(
+                profile_id=profile_id,
+                display_name=display_name,
+                consent_recorded=True,
+                active=True,
+            ))
+
+    def get_profile(self, profile_id: str) -> dict[str, object] | None:
+        with self.store.sessions() as session:
+            row = session.get(FaceProfileRow, profile_id)
+            if row is None:
+                return None
+            return {
+                "profile_id": row.profile_id,
+                "display_name": row.display_name,
+                "consent_recorded": bool(row.consent_recorded),
+                "active": bool(row.active),
+            }
 
     def revoke(self, profile_id: str) -> bool:
         with self.store.sessions.begin() as session:
@@ -45,5 +62,13 @@ class FaceProfileStore:
 
     def list_active(self) -> list[dict[str, str]]:
         with self.store.sessions() as session:
-            rows = session.scalars(select(FaceProfileRow).where(FaceProfileRow.active.is_(True))).all()
-            return [{"profile_id": r.profile_id, "display_name": r.display_name} for r in rows]
+            rows = session.scalars(
+                select(FaceProfileRow).where(
+                    FaceProfileRow.active.is_(True),
+                    FaceProfileRow.consent_recorded.is_(True),
+                )
+            ).all()
+            return [
+                {"profile_id": row.profile_id, "display_name": row.display_name}
+                for row in rows
+            ]
