@@ -15,9 +15,11 @@ htmlcov/
 dist/
 build/
 
-# Local data and biometrics
+# Local data, authentication state, and biometrics
 data/*.db
 data/**/*.db
+data/owner_auth.json
+data/owner_auth.json.tmp
 data/memory/
 data/user_profiles/
 data/biometrics/
