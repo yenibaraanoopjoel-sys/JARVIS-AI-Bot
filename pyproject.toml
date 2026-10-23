@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jarvis-ai-assistant"
-version = "0.1.0"
+version = "0.2.0"
 description = "A personal AI assistant with voice, memory, vision, and permission-controlled desktop tools"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 ai = ["openai>=1.30,<3"]
 voice = ["SpeechRecognition>=3.10,<4", "pyttsx3>=2.90,<3", "PyAudio>=0.2.14"]
-vision = ["opencv-python>=4.9,<5", "Pillow>=10.3,<13"]
+vision = ["opencv-contrib-python>=4.9,<5", "Pillow>=10.3,<13", "numpy>=1.26,<3"]
 test = ["pytest>=8,<9", "pytest-cov>=5,<7", "ruff>=0.5,<1"]
 
 [project.scripts]
