@@ -28,7 +28,9 @@ test = ["pytest>=8,<9", "pytest-cov>=5,<7", "ruff>=0.5,<1"]
 jarvis = "jarvis.cli:app"
 
 [tool.setuptools.packages.find]
-include = ["jarvis*"]
+where = ["."]
+include = ["jarvis", "jarvis.*"]
+namespaces = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
