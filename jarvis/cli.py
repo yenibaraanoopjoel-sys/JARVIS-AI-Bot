@@ -245,7 +245,7 @@ def auth_status() -> None:
 def face_enroll(
     profile_id: str = typer.Option(..., "--profile-id", help="Unique local profile ID"),
     name: str = typer.Option(..., "--name", help="Display name for the person being enrolled"),
-    samples: int = typer.Option(None, "--samples", min=5, max=30, help="Number of samples to capture"),
+    samples: int | None = typer.Option(None, "--samples", min=5, max=30, help="Number of samples to capture"),
 ) -> None:
     """Enroll a consenting person using multiple camera samples."""
     settings = get_settings()
