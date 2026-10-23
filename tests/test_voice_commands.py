@@ -9,7 +9,8 @@ def test_app_launch_commands_are_normalized():
     parsed = parse_local_command("JARVIS, open calculator")
     assert parsed is not None
     assert parsed.argument == "calculator"
-    assert parse_local_command("please open the text editor") is None
+    alias = parse_local_command("please open the text editor")
+    assert alias is not None and alias.argument == "notepad"
     parsed = parse_local_command("Hey JARVIS launch PowerShell")
     assert parsed is not None
     assert parsed.action == "open_application"
