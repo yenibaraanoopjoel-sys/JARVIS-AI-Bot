@@ -1,30 +1,29 @@
 # JARVIS AI Assistant
 
-JARVIS is a personal AI assistant targeting Windows/PowerShell with conversational AI, voice I/O, persistent conversation history, consent-based face enrollment, and permission-controlled desktop utilities.
+JARVIS is a Python-based personal assistant targeting Windows and PowerShell. This repository contains a real AI conversation provider, persisted chat history, optional speech input/output, consent-based local face identification, a local owner PIN, and permission-controlled application launching.
 
-## Current implementation status
+## Current working capabilities
 
-Implemented in this repository:
-- Python package, environment-based settings, and safe logging defaults.
-- SQLAlchemy/SQLite persistence for conversations and messages.
-- Configurable OpenAI conversational provider (requires a valid API key and enabled model access).
-- Terminal text chat and optional speech input/output.
-- Optional OpenCV face detection and consent-gated enrollment image capture.
-- Basic face-profile metadata registry.
-- Central permission checks and a small Windows application allowlist.
-- Initial automated tests.
+- AI-backed chat through the configured OpenAI API (requires a valid API key and model access).
+- Persistent conversations and messages in SQLite.
+- Terminal text chat and single-utterance voice turns.
+- Text-to-speech through the system voice engine when enabled.
+- Deterministic local commands for current time/date and a small allowlist of Windows applications.
+- Owner PIN protected application launching, with app launching disabled by default.
+- Multi-sample face enrollment and local face identification using OpenCV-contrib LBPH.
+- Consent metadata and face-profile revocation that removes local enrollment samples.
+- Central permission checks, safe logging defaults, and automated unit tests.
 
-Not yet implemented or not yet verified as production-ready:
-- A reliable wake-word engine.
-- Robust speaker identification.
-- Production face recognition/identity matching and liveness checks.
-- End-to-end authenticated owner identity.
-- General-purpose safe computer control and model tool-calling.
-- Camera-to-AI visual question answering.
-- Web search, reminders scheduler, desktop UI, and mobile synchronization.
-- CI execution and real device testing.
+## Not implemented / not claimed to work yet
 
-Do not treat face enrollment as face recognition authentication: the current vision module only detects one face and saves an enrollment crop after camera access is enabled.
+- A reliable wake-word engine or background always-listening service.
+- Robust speaker identification or voice biometrics.
+- Face liveness detection or spoof resistance. A face match is **not** authentication.
+- General-purpose model tool calling, unrestricted terminal execution, or broad computer control.
+- Web search integration, reminder scheduler, desktop UI, mobile sync, or camera-to-AI visual question answering.
+- End-to-end device testing on every Windows camera/microphone configuration.
+
+JARVIS must not be trusted with sensitive operations solely because a face was matched. App launch remains protected by the local owner PIN and configuration allowlist.
 
 ## Windows / PowerShell setup
 
@@ -40,7 +39,7 @@ pip install -e ".[ai,test]"
 Copy-Item .env.example .env
 ```
 
-Edit `.env` locally and set `OPENAI_API_KEY` to your own valid API key. Do not commit that file. Confirm the configured model is available to your account.
+Edit `.env` locally and set `OPENAI_API_KEY` to your own API key. Confirm that `OPENAI_MODEL` is available to your account. Never commit `.env`.
 
 Start text chat:
 
@@ -48,35 +47,90 @@ Start text chat:
 jarvis chat
 ```
 
-Check the installation:
+Run diagnostics and tests:
 
 ```powershell
 jarvis doctor
 pytest
+ruff check .
 ```
 
-Optional voice packages:
+## Voice commands
+
+Install the optional voice dependencies:
 
 ```powershell
 pip install -e ".[voice]"
 jarvis chat --voice
 ```
 
-Microphone and speech-recognition behavior depends on Windows audio devices and the configured speech provider. The current speech-recognition adapter uses Google's online recognition API; it is not offline recognition.
+JARVIS listens for one utterance at a time, sends transcribed text to its conversation engine, then speaks the response. The current speech-recognition adapter uses Google's online recognition API; it is **not offline speech recognition**. Speech output uses `pyttsx3` and the installed system voice.
 
-Optional vision dependencies:
+Commands currently handled by deterministic local code include:
+
+- "JARVIS, what time is it?"
+- "JARVIS, what's today's date?"
+- "JARVIS, open Notepad"
+- "JARVIS, open Calculator"
+- "JARVIS, open Explorer"
+- "JARVIS, open PowerShell"
+- "JARVIS, who is in front of me?" (opens the camera only when camera access is enabled)
+
+App launching is disabled by default. To enable the small allowlist, set this in your local `.env`:
+
+```dotenv
+JARVIS_ALLOW_APP_LAUNCH=true
+```
+
+Configure a local owner PIN:
+
+```powershell
+jarvis auth setup
+jarvis auth status
+```
+
+The PIN is stored as a salted PBKDF2 hash in `data/owner_auth.json`; the plaintext PIN is not saved. When an allowlisted application is requested, JARVIS asks for the PIN if the session is not already authenticated. Use `/logout` to lock the local action session again.
+
+## Face identification
+
+Install the vision extra; this uses OpenCV-contrib because the LBPH face recognizer is not included in the standard OpenCV wheel:
 
 ```powershell
 pip install -e ".[vision]"
 ```
 
-The camera remains disabled by default. To enable local enrollment, explicitly set `JARVIS_CAMERA_ENABLED=true` in `.env`, ensure all captured faces are enrolled with informed consent, and run a supported application workflow that invokes the enrollment module. Camera support is not always-on monitoring.
+Enable the camera explicitly in `.env`:
 
-## Safety
+```dotenv
+JARVIS_CAMERA_ENABLED=true
+JARVIS_FACE_MATCH_THRESHOLD=70.0
+JARVIS_FACE_ENROLLMENT_SAMPLES=8
+```
 
-- Never commit `.env`, API keys, local databases, biometric images/embeddings, or recordings.
-- Camera and microphone access must remain opt-in and visibly active.
-- Facial or voice similarity is not sufficient alone for sensitive authorization.
-- Terminal execution is deliberately not exposed by the current CLI.
-- Desktop app launching is denied by default and limited to allowlisted applications.
-- The current application is an early implementation with tests provided; run tests locally and evaluate all modules before relying on it for sensitive tasks.
+Enroll a person only after they have been informed and have explicitly consented:
+
+```powershell
+jarvis face enroll --profile-id anoop --name "Anoop"
+```
+
+The camera window opens after consent confirmation. Press **C** to capture each sample while changing head angle and expression slightly; press **Q** to cancel. At least five samples are required. Sample images are stored locally under the ignored `data/user_profiles/` directory.
+
+Identify an enrolled person:
+
+```powershell
+jarvis face identify --seconds 15
+jarvis face list
+jarvis face revoke --profile-id anoop
+```
+
+Revoking asks for confirmation, deactivates the profile, and deletes its local samples. If recognition quality is poor, adjust the distance threshold cautiously and re-enroll with varied lighting and angles. The reported LBPH distance is **not a calibrated probability**; lower distances indicate closer matches. No liveness check is implemented, so photos or screens may be mistaken for a face match. Do not use face matching alone to authorize private data access or sensitive actions.
+
+## Safety and privacy
+
+- Camera use is disabled by default and requires explicit local configuration.
+- Biometric enrollment requires a consent confirmation.
+- Face samples, the local owner PIN hash, databases, recordings, and `.env` are excluded from source control.
+- A face match is an identification result, not authentication.
+- Terminal execution is not exposed by the current CLI.
+- Application launching is limited to Notepad, Calculator, Explorer, and PowerShell and is denied unless enabled in configuration and owner-authenticated.
+- JARVIS should report failures honestly and must not claim an action succeeded without a real tool result.
