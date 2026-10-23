@@ -2,7 +2,6 @@
 from pathlib import Path
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, create_engine, select, event
-from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from .config import Settings
