@@ -19,10 +19,13 @@ class LocalCommand:
 _APP_ALIASES = {
     "notepad": "notepad",
     "text editor": "notepad",
+    "the text editor": "notepad",
     "calculator": "calculator",
+    "the calculator": "calculator",
     "calc": "calculator",
     "explorer": "explorer",
     "file explorer": "explorer",
+    "the file explorer": "explorer",
     "windows explorer": "explorer",
     "powershell": "powershell",
     "power shell": "powershell",
