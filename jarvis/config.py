@@ -1,6 +1,7 @@
 """Validated configuration for JARVIS; secrets are loaded from environment only."""
 from functools import lru_cache
 from pathlib import Path
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     stt_language: str = "en-US"
     wake_word_enabled: bool = False
     camera_enabled: bool = False
+    face_match_threshold: float = Field(default=70.0, ge=1.0, le=150.0)
+    face_enrollment_samples: int = Field(default=8, ge=5, le=30)
     allow_app_launch: bool = False
     allow_filesystem_writes: bool = False
     allow_terminal: bool = False
