@@ -74,8 +74,10 @@ def _handle_local_command(
                     owner_authenticated,
                 )
             return (
-                f"I recognize {match.display_name}. Face matching is only an identification signal, "
-                "not proof of owner authentication.",
+                (
+                    f"I recognize {match.display_name}. Face matching is only an identification signal, "
+                    "not proof of owner authentication."
+                ),
                 owner_authenticated,
             )
         except (VisionError, PermissionError, ValueError) as exc:
@@ -84,15 +86,19 @@ def _handle_local_command(
     if parsed.action == "open_application":
         if not settings.allow_app_launch:
             return (
-                "Application launching is disabled. Set JARVIS_ALLOW_APP_LAUNCH=true in your local .env "
-                "file and restart JARVIS to enable the allowlisted applications.",
+                (
+                    "Application launching is disabled. Set JARVIS_ALLOW_APP_LAUNCH=true in your local .env "
+                    "file and restart JARVIS to enable the allowlisted applications."
+                ),
                 owner_authenticated,
             )
         if not owner_authenticated:
             if not authenticator.is_configured:
                 return (
-                    "Owner actions are locked. Run 'jarvis auth setup' in PowerShell to configure an owner "
-                    "PIN, then restart JARVIS.",
+                    (
+                        "Owner actions are locked. Run 'jarvis auth setup' in PowerShell to configure an owner "
+                        "PIN, then restart JARVIS."
+                    ),
                     owner_authenticated,
                 )
             try:
