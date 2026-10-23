@@ -1,7 +1,6 @@
 """AI provider abstraction; does not fabricate answers when the provider is unavailable."""
 from typing import Protocol, Sequence
-from . import __name__ as _package_name
-from ..models import Message
+
 from ..config import Settings
 
 
@@ -10,7 +9,7 @@ class AIProvider(Protocol):
 
 
 class ProviderError(RuntimeError):
-    pass
+    """Raised when the configured AI provider is unavailable or fails."""
 
 
 class OpenAIProvider:
@@ -38,4 +37,7 @@ class OpenAIProvider:
         except ProviderError:
             raise
         except Exception as exc:
-            raise ProviderError(f"AI provider request failed ({type(exc).__name__}). Check connectivity, model configuration, and API access.") from exc
+            raise ProviderError(
+                f"AI provider request failed ({type(exc).__name__}). "
+                "Check connectivity, model configuration, and API access."
+            ) from exc
